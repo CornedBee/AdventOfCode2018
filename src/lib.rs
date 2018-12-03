@@ -19,11 +19,21 @@ pub fn day1(input: &str) -> Result<(i32, i32), std::num::ParseIntError> {
     unreachable!("cycle() is infinite");
 }
 
-pub fn day2(input: &str) -> (i32, i32) {
-    let checksum_parts = input.lines().map(checksum_increments)
+pub fn day2(input: &str) -> (i32, String) {
+    let lines = input.lines().collect::<Vec<_>>();
+    let checksum_parts = lines.iter().cloned().map(checksum_increments)
         .fold((0, 0), |(x1, x2), (y1, y2)| (x1 + y1, x2 + y2));
 
-    (checksum_parts.0 * checksum_parts.1, 0)
+    let mut part2 = "".to_owned();
+    for (i, s1) in lines.iter().enumerate() {
+        for s2 in &lines[(i+1)..] {
+            if are_similar(s1, s2) {
+                part2 = common_subset(s1, s2);
+            }
+        }
+    }
+
+    (checksum_parts.0 * checksum_parts.1, part2)
 }
 
 fn checksum_increments(word: &str) -> (i32, i32) {
@@ -46,4 +56,18 @@ fn letter_counts(word: &str) -> HashMap<char, i32> {
         *count += 1;
     }
     result
+}
+
+fn are_similar(s1: &str, s2: &str) -> bool {
+    let mut diffs = s1.chars().zip(s2.chars()).filter(|(c1, c2)| c1 != c2);
+    diffs.next().is_some() && diffs.next().is_none()
+}
+
+#[test]
+fn are_similar_for_similar_strings() {
+    assert!(are_similar("abcde", "abxde"));
+}
+
+fn common_subset(s1: &str, s2: &str) -> String {
+    s1.chars().zip(s2.chars()).filter(|(c1, c2)| c1 == c2).map(|(c1, _)| c1).collect()
 }
