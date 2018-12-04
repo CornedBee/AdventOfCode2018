@@ -84,22 +84,29 @@ struct Rectangle {
 }
 
 struct Claim {
-    _id: i32,
+    id: i32,
     area: Rectangle,
 }
 
-pub fn day3(input: &str) -> Result<(i32, i32), ParseIntError> {
+pub fn day3(input: &str) -> Result<(i32, Option<i32>), ParseIntError> {
     let claims = input.lines().map(parse_claim).collect::<Result<Vec<_>, _>>()?;
 
     let mut field = Array2::zeros((1000, 1000));
 
     for claim in &claims {
-        mark_claim(&mut field, claim);
+        count_claim(&mut field, claim);
     }
 
     let part1 = field.iter().filter(|i| **i > 1).count() as i32;
 
-    Ok((part1, 0))
+    field.fill(0);
+
+    let mut viable = HashSet::new();
+    for claim in &claims {
+        mark_claim(&mut field, claim, &mut viable);
+    }
+
+    Ok((part1, if viable.len() == 1 { viable.into_iter().next() } else { None }))
 }
 
 fn parse_claim(s: &str) -> Result<Claim, ParseIntError> {
@@ -110,7 +117,7 @@ fn parse_claim(s: &str) -> Result<Claim, ParseIntError> {
     let left = i32::from_str(parsed.get(2).unwrap().as_str())?;
     let top = i32::from_str(parsed.get(3).unwrap().as_str())?;
     Ok(Claim {
-        _id: i32::from_str(parsed.get(1).unwrap().as_str())?,
+        id: i32::from_str(parsed.get(1).unwrap().as_str())?,
         area: Rectangle {
             left,
             top,
@@ -120,7 +127,22 @@ fn parse_claim(s: &str) -> Result<Claim, ParseIntError> {
     })
 }
 
-fn mark_claim(field: &mut Array2<i32>, claim: &Claim) {
+fn count_claim(field: &mut Array2<i32>, claim: &Claim) {
     let mut slice = field.slice_mut(s![claim.area.left..claim.area.right, claim.area.top..claim.area.bottom]);
-    slice.map_inplace(|i| *i += 1);
+    slice.mapv_inplace(|i| i + 1);
+}
+
+fn mark_claim(field: &mut Array2<i32>, claim: &Claim, viable: &mut HashSet<i32>) {
+    let mut slice = field.slice_mut(s![claim.area.left..claim.area.right, claim.area.top..claim.area.bottom]);
+    let mut conflict = false;
+    slice.mapv_inplace(|i| {
+        if i != 0 {
+            conflict = true;
+            viable.remove(&i);
+        }
+        claim.id
+    });
+    if !conflict {
+        viable.insert(claim.id);
+    }
 }
