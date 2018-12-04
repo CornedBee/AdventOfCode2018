@@ -1,7 +1,10 @@
 [package]
 name = "aoc2018"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Sebastian Redl <wasti.redl@gmx.net>"]
 edition = "2018"
 
 [dependencies]
+lazy_static = "1.2"
+ndarray = "0.12"
+regex = "1"
